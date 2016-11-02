@@ -89,11 +89,6 @@ class SimpleRouter < Trema::Controller
   end
   # rubocop:enable MethodLength
 
-  def show_table
-    return true if @routing_table.nil?
-    show_table_entries
-  end
-
   private
 
   def sent_to_router?(packet_in)
@@ -177,12 +172,6 @@ class SimpleRouter < Trema::Controller
     send_packet_out(dpid,
                     raw_data: arp_request.to_binary,
                     actions: SendOutPort.new(interface.port_number))
-  end
-
-  def show_table_entries
-    @routing_table.eath do | entry |
-      puts entry
-    end
   end
 end
 # rubocop:enable ClassLength
