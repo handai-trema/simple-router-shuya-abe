@@ -106,6 +106,10 @@ class SimpleRouter < Trema::Controller
     show_interface_entries
   end
 
+  def addall_entries(filename)
+    addall_routing_entries(filename)
+  end
+
   private
 
   def sent_to_router?(packet_in)
@@ -219,6 +223,14 @@ class SimpleRouter < Trema::Controller
     end
     entries.push("")
     return entries
+  end
+
+  def addall_routing_entries(filename)
+    File.foreach(filename) do |line|
+      line.chomp!
+      dst, masklen, nexthop = line.split(",")
+      add_routing_entries(dst, masklen.to_i, nexthop)
+    end
   end
 
 end
