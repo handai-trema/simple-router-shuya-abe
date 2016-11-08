@@ -25,32 +25,31 @@ module RouterCLIApp
   end
 
   desc 'Add a entry'
-  arg_name 'dpid dest_addr next_ip'
+  arg_name 'dst, masklen, nexthop'
   command :add do |c|
     c.desc 'Location to find socket files'
     c.flag [:S, :socket_dir], default_value: Trema::DEFAULT_SOCKET_DIR
 
     c.action do |_global_options, options, args|
-      dpid = args[0].hex
-      dest_addr = args[1].to_i
-      next_ip = args[2].to_i
+      dst = args[0]
+      masklen = args[1].to_i
+      nexthop = args[2]
       Trema.trema_process('SimpleRouter', options[:socket_dir]).controller.
-        add_entry(dpid, dest_addr, next_ip)
+        add_entry(dst, masklen, nexthop)
     end
   end
 
   desc 'Delete a entry'
-  arg_name 'dpid dest_addr next_ip'
+  arg_name 'dst, masklen'
   command :delete do |c|
     c.desc 'Location to find socket files'
     c.flag [:S, :socket_dir], default_value: Trema::DEFAULT_SOCKET_DIR
 
     c.action do |_global_options, options, args|
-      dpid = args[0].hex
-      dest_addr = args[1].to_i
-      next_ip = args[2].to_i
+      dst = args[0]
+      masklen = args[1].to_i
       Trema.trema_process('SimpleRouter', options[:socket_dir]).controller.
-        cleate_patch(dpid, dest_addr, next_ip)
+        delete_entry(dst, masklen)
     end
   end
 

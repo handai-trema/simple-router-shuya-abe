@@ -94,6 +94,18 @@ class SimpleRouter < Trema::Controller
     show_table_entries
   end
 
+  def add_entry(dst, masklen, nexthop)
+    add_routing_entries(dst, masklen, nexthop)
+  end
+
+  def delete_entry(dst, masklen)
+    delete_routing_entries(dst, masklen)
+  end
+
+  def show_interface
+    show_interface_entries
+  end
+
   private
 
   def sent_to_router?(packet_in)
@@ -182,5 +194,32 @@ class SimpleRouter < Trema::Controller
   def show_table_entries
     return @routing_table.show
   end
+
+  def add_routing_entries(dst, masklen, nexthop)
+    @routing_table.add({
+      netmask_length: masklen,
+      destination: dst,
+      next_hop: nexthop
+    })
+  end
+
+  def delete_routing_entries(dst, masklen)
+    @routing_table.delete({
+      netmask_length: masklen,
+      destination: dst
+    })
+  end
+
+  def show_interface_entries
+    entries = []
+    entries.push("port, mac, ip")
+    entries.push("=============")
+    Interface.all.each do |each|
+      entries.push("#{each.port_number}, #{each.mac_address}, #{each.ip_address.value}/#{each.netmask_length}")
+    end
+    entries.push("")
+    return entries
+  end
+
 end
 # rubocop:enable ClassLength
