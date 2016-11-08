@@ -23,17 +23,4 @@ class RoutingTable
     end
     nil
   end
-
-  def show
-    entries = []
-    entries.push("dst/mask, nexthop")
-    entries.push("=================")
-    MAX_NETMASK_LENGTH.downto(0).each do |each|
-      @db[each].each do |k, v|
-        entries.push("#{IPAddr.new(k, Socket::AF_INET).to_s}/#{each}, #{v.to_s}")
-        entries.push("")
-      end
-    end
-    return entries
-  end
 end

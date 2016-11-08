@@ -90,7 +90,7 @@ class SimpleRouter < Trema::Controller
   # rubocop:enable MethodLength
 
   def show_table
-    return true if @routing_table.nil?
+    return "no entries" if @routing_table.nil?
     show_table_entries
   end
 
@@ -180,9 +180,7 @@ class SimpleRouter < Trema::Controller
   end
 
   def show_table_entries
-    @routing_table.eath do | entry |
-      puts entry
-    end
+    return @routing_table.show
   end
 end
 # rubocop:enable ClassLength
