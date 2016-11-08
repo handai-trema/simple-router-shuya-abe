@@ -246,6 +246,71 @@ bin/routercliから呼び出され，show_interface_entriesを呼び出すメソ
   end
 ```
 
+###ルーティングテーブルエントリを外部の設定ファイルから読み込んで追加
+本レポート課題においては，ルーティングテーブルエントリをひとつずつ追加するための機能を実装した．
+しかし，ある程度複雑なルーティングテーブルを構築する場合などは，
+外部ファイルにルーティングテーブルに関する情報を記述しておき，
+そのファイルを読み込むことで一度に複数のエントリが作成されるようにすると便利である．
+
+また，外部ファイルから毎回同じエントリを読み込むことができるので，動作テスト時にIPアドレスの打ち間違いなどのヒューマンエラーを防ぐことも期待される．
+
+ルーティングテーブルエントリの外部設定ファイルからの追加は以下のように行う．
+ただし，<filepath>はルーティングテーブルに追加したいエントリの情報をまとめて記述した設定ファイルのパスである．
+```
+bin/routercli addall <filepath>
+```
+
+設定ファイルは以下のように記述する．1行がルーティングテーブルに追加する1エントリに対応し，要素はカンマ区切りである．
+エントリは順に宛先ネットワークアドレス，ネットワークマスク長，次の転送先となっている．
+```
+[entries.csv]
+192.168.1.0,24,192.168.1.1
+192.168.2.0,24,192.168.2.1
+```
+
+####routercli
+lib/simple_router.rbを呼び出し,addall_entriesメソッドを実行する．
+引数には設定ファイルのパスを表す文字列が指定される．
+```ruby
+  desc 'Add entries'
+  arg_name 'filename'
+  command :addall do |c|
+    c.desc 'Location to find socket files'
+    c.flag [:S, :socket_dir], default_value: Trema::DEFAULT_SOCKET_DIR
+
+    c.action do |_global_options, options, args|
+      filename = args[0]
+      Trema.trema_process('SimpleRouter', options[:socket_dir]).controller.
+        addall_entries(filename)
+    end
+  end
+```
+
+####simple_router.rb
+#####addall_entries
+bin/routercliから呼び出され,プライベートメソッドであるaddall_routing_entriesを呼び出すメソッド. 
+
+```ruby
+  def addall_entries(filename)
+    addall_routing_entries(filename)
+  end
+```
+
+#####addall_routing_entries (private)
+設定ファイルのパスをもとにファイルを読み込み，一行ずつカンマ区切りで文字列を分割する．
+このとき，chompメソッドを使用し，改行文字を削除してから分割を行っている．
+分割された文字列を引数とし，add_routing_entriesメソッドを呼び出すことでエントリの追加を行う．
+```ruby
+  def addall_routing_entries(filename)
+    File.foreach(filename) do |line|
+      line.chomp!
+      dst, masklen, nexthop = line.split(",")
+      add_routing_entries(dst, masklen.to_i, nexthop)
+    end
+  end
+```
+
+
 ###動作確認
 以下のようにして動作確認を行った．
 ただし，ルータやホストなどに関する設定ファイルは課題リポジトリ内のサンプルファイル（trema.conf）を用いている．
@@ -254,7 +319,8 @@ bin/routercliから呼び出され，show_interface_entriesを呼び出すメソ
 1. ルータを起動する
 2. ルーティングテーブルにエントリを追加する
 3. ルーティングテーブルからエントリを削除する
-4. インターフェースの一覧を表示する
+4. 外部の設定ファイルから複数のエントリを追加する
+5. インターフェースの一覧を表示する
 ```
 
 ####1. ルータを起動する
@@ -295,7 +361,28 @@ dst/mask, nexthop
 0.0.0.0/0, 192.168.1.2
 ```
 
-####4. インターフェースの一覧を表示する
+####4. 外部の設定ファイルから複数のエントリを追加する
+外部の設定ファイルから複数のエントリを追加する．
+ここでは，以下の設定ファイルを利用した．
+```
+[entries.csv]
+192.168.1.0,24,192.168.1.1
+192.168.2.0,24,192.168.2.1
+```
+
+実行後，確かにテーブルには設定ファイルによって指定されたエントリが追加されている．
+```
+routercli addall ./entries.csv
+
+[routercli show_table]
+dst/mask, nexthop
+=================
+192.168.1.0/24, 192.168.1.1
+192.168.2.0/24, 192.168.2.1
+0.0.0.0/0, 192.168.1.2
+```
+
+####5. インターフェースの一覧を表示する
 最後に，ルータのインターフェース一覧を表示する．
 これはtrema.confによって指定したインターフェースの情報と一致する．
 ```
@@ -305,6 +392,7 @@ port, mac, ip
 1, 01:01:01:01:01:01, 192.168.1.1/24
 2, 02:02:02:02:02:02, 192.168.2.1/24
 ```
+
 
 
 #作業メモ（レポート範囲外）
